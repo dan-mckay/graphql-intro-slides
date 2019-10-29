@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<title>graphql - an introduction &amp; building an api</title>
+<link rel=stylesheet href="styles/lagom.css">
+
+<section>
+  <small>
+    <img src="./img/graphql-logo.svg" alt="GraphQL Logo"/>
+  </small>
+  <h1>graphql</h1>
+  <br />
+  <h2>an introduction &amp; building an api</h2>
+</section>
+
+<section>
+    <h1>What is it?</h1>
+    <br />
+    <h2>Graph Query Language</h2>
+    <br />
+    <br />
+    <ul>
+      <li>A mechanism for moving data between server and client</li>
+      <li>Allows a client to query exactly what data it requires</li>
+      <li>Get data using queries</li>
+      <li>Write data using mutations</li>
+      <li>Subscribe to a real-time data feed using subscriptions</li>
+    </ul>
+
+    <!--
+      1, Also a runtime for fulfilling
+      these queries with existing data
+
+      2, As opposed to REST endpoints for example, where we all the data that the API 
+      is configured to send, whether required or not
+    -->
+  </section>
+
+  <section>
+    <h1>Background</h1>
+    <br />
+    <p>Facebook <i>"needed a data-fetching API powerful enough to describe all of Facebook, 
+      yet simple enough to be easy to learn and use by our product developers."</i></p>
+    <br />
+    <p>Instead of multiple “dumb” endpoints, have a single “smart” endpoint that can send 
+      the data in whichever shape the client requires</p>
+    <!--
+      Started at Facebook in 2012
+      Open source release in 2015
+      Are they saying product developers are simple? hmmm
+    -->
+  </section>
+
+  <section>
+      <h1>Features</h1>
+      <br />
+      <br />
+      <ol>
+        <li>Defines a data shape using schema</li>
+        <li>Hierarchical structure</li>
+        <li>Strongly Typed</li>
+        <li>Plugs into your exisiting data</li>
+        <li>Powerful developer tools</li>
+      </ol>
+      <!--
+        1. Schema defines queries which mirror responses
+        2. Such as nested objects in JSON
+        3. Each level of a GraphQL query corresponds to a particular type, made up of fields of data such as string or int
+        4. Not about storage, but more of a protocol to use your existing storage/ data model
+        5. Such as graphiql
+      -->
+    </section>
+
+    <section>
+      <h1>Schema</h1>
+        <br />
+        <code class="bash">
+        type Address {
+          street: String
+          city: String
+        }
+        
+        type User {
+          id: UUID
+          name: String
+          address: Address
+        }
+        
+        type Query {
+          user: User
+        }
+
+        schema {
+          query: Query
+        } 
+        </code>
+      
+        <!--
+          - Scema defines the shape of your data using types and data fields
+          - Every GraphQL API conforms to a schema
+          - We are querying for a User, which is made up of id, name and address fields
+          - Address is a type of its own made up city and street fields
+        -->
+    </section>
+
+  <section>
+    <h1>Query</h1>
+    <br />
+    <img src="./img/graphql.gif">
+
+    <!--
+      - Queries are used for reads
+      - On the left we have the query syntax, showing how the client
+      calls for the data. Sent as a HTTP POST request. See also we
+      are passing in the user's id, telling the server which user
+      we are interested in
+      - On the right we have the server's response in JSON - N.B.
+      the query isn't using JSON, but it is very similar
+      - Graphql queries mirror the response
+      - If you only want name ask for just the name etc.
+    -->
+  </section>
+
+  <section>
+      <br />
+      <h1>Mutation</h1>
+      <code class="bash">
+        mutation($userId: UUID!, $street: String, $city: String) {
+          insertAddress(
+            userId: $userId
+            street: $street
+            city: $city
+          ) {
+            street
+            city
+          }
+        }
+      </code>
+      <code class="bash">
+      // returns
+      {
+        "data": {
+          "insertAddress": {
+            "street": "Pearse Street",
+            "city": "Dublin"
+          }
+        }
+      }
+      </code>
+  
+      <!--
+        - Mutations are used for writes
+        - In this simple exmple you can see that the mutation also returns data
+        - This is useful when mutating existing data, for example, when incrementing a number field, 
+          since we can mutate the value and query the new value of the field with a single request.
+        - worth mentioning: Subscriptions - a way to push data from the server to the clients 
+          that choose to listen to real time data feeds from the server - e.g. users online
+          you could have a table in the db that you add a user id to when a user logs in and
+          a client could subscribe to changes in that
+      -->
+    </section>
+
+    <section>
+        <h1>The Graph Part</h1>
+        <br />
+        <img src="./img/graph.jpg">
+    
+        <!--
+        - Graph is a non-linear data structure that consisits of nodes (data) & edges 
+        (relationships between the data)
+        - Map out your app data as a graph - describe diagram
+        --> 
+    </section>
+
+    <section>
+        <h1>The Graph Part contd.</h1>
+        <br />
+        <img src="./img/traverse.jpg">
+    
+        <!--
+        - In the example we start with a message node (which is selected using its id)
+        - the query will then traverse the graph following the edges (or relationsships)
+          between the nodes (data objects) that are specified in the query
+        - talk through the diagram
+        --> 
+    </section>
+
+    <section>
+        <h1>Extract Trees from the Graph</h1>
+        <br />
+        <code class="bash">
+        {
+          "message": {
+            "text": "THE PIPELINE IS BLOCKED",
+            "author": "@cliona",
+            "channels": [
+              "#ed_ui",
+              "#ed_engineering",
+            ]
+          }
+        }
+        </code>
+    
+        <!--
+        - This is the data that we get back fropm the query
+        - see the hierarchical structure
+        --> 
+    </section>
+
+    <section>
+        <h1>How is that?</h1>
+        <br />
+        <ul>
+          <li>Start by defining a root query type</li>
+          <li>For each piece of information, there is a query path</li>
+        </ul>
+        <code class="bash">
+        Root query --> Message("id": "1234") --> Text = "THE PIPELINE IS BLOCKED"
+        
+        Root query --> Message("id": "1234") --> Author = "@cliona"
+        </code>
+        and so on...
+    
+        <!--
+        - Root query type defines where a graphql query can start traversing the graph data structure
+        --> 
+    </section>
+
+    <section>
+        <h1>In a Nutshell</h1>
+        <br />
+        <br />
+        <i>"GraphQL is a query language that traverses your data graph to produce a query result tree."</i>
+        <small><a href="https://blog.apollographql.com/the-concepts-of-graphql-bc68bd819be3">blog.apollographql.com</a></small>
+        <!--
+        this is a note that is
+        only visible in presentation mode
+      -->
+    </section>
+
+    <section>
+      <small>
+        <img src="./img/hasura-logo.png" alt="Hasura Logo"/>
+      </small>
+      <br />
+      <h2>building an api</h2>
+      <br />
+      <a href="https://hasura.io">hasura.io</a>
+      <!--
+      "The Hasura GraphQL engine lets you set up a GraphQL server and event triggers over a Postgres database in minutes."
+      -->
+    </section>
+
+    <section>
+        <h1>What is it?</h1>
+        <br />
+        <i>"The Hasura GraphQL engine lets you set up a GraphQL server and event triggers over a Postgres database in minutes."</i>
+    
+        <!--
+        - In the example we start with a message node (which is selected using its id)
+        - the query will then traverse the graph following the edges (or relationsships)
+          between the nodes (data objects) that are specified in the query
+        - talk through the diagram
+        --> 
+    </section>
+    
+
+    <section>
+        <h1>What does that mean?</h1>
+        <br />
+        <img src="./img/apollo.png">
+    
+        <!--
+        - This is a typical stack of a graphql setup
+        --> 
+    </section>
+
+
+  
+
+<section>
+  <small>
+
+    <!-- please leave this here <3 -->
+    <p>created with <a href="https://reimertz.github.io/lagom">lagom.js</a></p>
+  </small>
+</section>
+<script src="scripts/lagom.js"></script>
